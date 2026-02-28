@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, k3s-deploy]
+    runs-on: [self-hosted]
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
