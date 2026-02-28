@@ -1,0 +1,14 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: primeiro-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.15.210-192.168.15.220 # Ajuste para IPs livres na sua rede
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: advertisement
+  namespace: metallb-system

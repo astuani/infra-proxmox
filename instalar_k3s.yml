@@ -1,0 +1,45 @@
+---
+- name: Preparar todos os nós
+  hosts: k3s_cluster
+  become: yes
+  tasks:
+    - name: Atualizar o sistema
+      apt:
+        update_cache: yes
+        upgrade: dist
+      tags: setup
+
+- name: Instalar o Primeiro Master
+  hosts: 192.168.15.201
+  become: yes
+  tasks:
+    - name: Instalar K3s no Master Principal
+      shell: curl -sfL https://get.k3s.io | sh -s - server --cluster-init
+      register: k3s_init
+
+    - name: Capturar o Token do Cluster
+      shell: cat /var/lib/rancher/k3s/server/node-token
+      register: cluster_token
+
+    - name: Salvar o Token para usar nos outros nós
+      set_fact:
+        token_do_cluster: "{{ cluster_token.stdout }}"
+        
+- name: Unir os outros Masters (HA)
+  hosts: 192.168.15.202, 192.168.15.203
+  become: yes
+  vars:
+    # Recuperamos o token que salvamos no primeiro passo
+    server_token: "{{ hostvars['192.168.15.201']['token_do_cluster'] }}"
+  tasks:
+    - name: Unir ao cluster como Master
+      shell: "curl -sfL https://get.k3s.io | K3S_TOKEN={{ server_token }} sh -s - server --server https://192.168.15.201:6443"
+
+- name: Unir os Workers
+  hosts: k3s_workers
+  become: yes
+  vars:
+    server_token: "{{ hostvars['192.168.15.201']['token_do_cluster'] }}"
+  tasks:
+    - name: Unir ao cluster como Worker (Agent)
+      shell: "curl -sfL https://get.k3s.io | K3S_TOKEN={{ server_token }} sh -s - agent --server https://192.168.15.201:6443"
