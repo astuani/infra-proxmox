@@ -1,4 +1,19 @@
-- name: Executar Ansible Playbook
-      run: |
-        # Usamos o -i e o nome do arquivo apontando para a pasta correta
-        ansible-playbook -i ansible/inventory.ini ansible/k3s-install.yml
+name: Deploy K3s Cluster
+on: [push]
+
+jobs:
+  ansible-deploy:
+    runs-on: self-hosted  # Garante que roda no SEU Runner que tem acesso aos IPs .15.x
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v4
+
+      - name: Instalar Ansible (caso não tenha)
+        run: |
+          if ! command -v ansible-playbook &> /dev/null; then
+            sudo apt update && sudo apt install ansible -y
+          fi
+
+      - name: Executar Instalação do K3s
+        run: |
+          ansible-playbook -i ansible/inventory.ini ansible/k3s-install.yml
