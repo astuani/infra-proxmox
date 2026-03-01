@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # JOB 1: CONSTRUÇÃO (Terraform)
+  # JOB 1: TERRAFORM (Cria as VMs no Proxmox)
   terraform:
     name: "1. Provisioning VMs"
     runs-on: self-hosted
@@ -33,24 +33,23 @@ jobs:
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
         run: terraform apply -parallelism=2 -auto-approve
 
-  # JOB 2: CONFIGURAÇÃO (Só roda se o Terraform terminar OK)
+  # JOB 2: CONFIGURAÇÃO (Só roda se o Job 1 terminar com sucesso)
   post_install:
-    name: "2. K3s and Secrets"
-    needs: terraform  # <--- ISSO impede o erro de "No route to host"
+    name: "2. Post-Install Config"
+    needs: terraform
     runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Check VMs Status
+      - name: Waiting for VMs
         run: |
-          echo "Aguardando as VMs iniciarem o serviço SSH..."
+          echo "Terraform finalizou! Aguardando 30s para as VMs darem boot..."
           sleep 30
-          ping -c 3 192.168.15.201 || echo "VM Master ainda não responde ping, mas vamos prosseguir."
+          ping -c 3 192.168.15.201 || echo "VM ainda não responde, mas tudo bem."
 
-      # COMENTE AS LINHAS DE KUBECTL POR ENQUANTO
-      # Elas só vão funcionar DEPOIS que você rodar o Ansible para instalar o K3s.
-      - name: Placeholder for K3s
+      # ESTE PASSO ABAIXO FOI DESATIVADO PARA NÃO DAR ERRO
+      - name: Create K8s Secret (Disabled)
         run: |
-          echo "As VMs foram criadas no Proxmox!"
-          echo "Próximo passo: Rodar o Playbook do Ansible para o IP 192.168.15.201"
+          echo "Pulando criação de secret porque o K3s ainda não foi instalado via Ansible."
+          # kubectl create secret generic mysql-pass --from-literal=password='${{ secrets.MYSQL_PASSWORD }}'
