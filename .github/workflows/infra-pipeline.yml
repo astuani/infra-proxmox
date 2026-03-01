@@ -5,13 +5,10 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # JOB 1: CONSTRUÇÃO (Terraform)
   terraform:
     name: "1. Provisioning VMs"
     runs-on: self-hosted
-    outputs:
-      # Isso avisa o próximo passo que o terraform terminou ok
-      tp_status: ${{ job.status }}
-    
     defaults:
       run:
         working-directory: ./terraform
@@ -36,14 +33,24 @@ jobs:
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
         run: terraform apply -parallelism=2 -auto-approve
 
-  # O PASSO ABAIXO SÓ DEVE RODAR DEPOIS QUE O TERRAFORM TERMINAR
-  kubernetes_setup:
-    name: "2. K3s & Secrets"
-    needs: terraform # <--- ISSO AQUI É O SEGREDO! Ele espera o Terraform.
+  # JOB 2: CONFIGURAÇÃO (Só roda se o Terraform terminar OK)
+  post_install:
+    name: "2. K3s and Secrets"
+    needs: terraform  # <--- ISSO impede o erro de "No route to host"
     runs-on: self-hosted
     steps:
-      - name: Create Secret
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check VMs Status
         run: |
-          # Por enquanto, vamos comentar isso até o Ansible estar pronto
-          # kubectl create secret generic mysql-pass ...
-          echo "Aguardando cluster estar pronto para criar secrets"
+          echo "Aguardando as VMs iniciarem o serviço SSH..."
+          sleep 30
+          ping -c 3 192.168.15.201 || echo "VM Master ainda não responde ping, mas vamos prosseguir."
+
+      # COMENTE AS LINHAS DE KUBECTL POR ENQUANTO
+      # Elas só vão funcionar DEPOIS que você rodar o Ansible para instalar o K3s.
+      - name: Placeholder for K3s
+        run: |
+          echo "As VMs foram criadas no Proxmox!"
+          echo "Próximo passo: Rodar o Playbook do Ansible para o IP 192.168.15.201"
