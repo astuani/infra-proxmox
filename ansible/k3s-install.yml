@@ -1,0 +1,25 @@
+---
+- name: Instalação Automática do K3s via Git/Ansible
+  hosts: all
+  become: yes
+  tasks:
+    - name: 1. Instalar K3s no Master (node-1)
+      shell: curl -sfL https://get.k3s.io | sh -s - server --cluster-init
+      when: inventory_hostname == 'node-1'
+
+    - name: 2. Capturar o Token do Master
+      shell: cat /var/lib/rancher/k3s/server/node-token
+      register: master_token_raw
+      when: inventory_hostname == 'node-1'
+
+    - name: 3. Espalhar o Token para os outros Nodes
+      set_fact:
+        token_do_master: "{{ hostvars['node-1']['master_token_raw'].stdout }}"
+      run_once: true
+
+    - name: 4. Instalar K3s nos Workers (node-2 ao 5)
+      shell: >
+        curl -sfL https://get.k3s.io | 
+        K3S_URL=https://192.168.1.201:6443 
+        K3S_TOKEN={{ token_do_master }} sh -
+      when: inventory_hostname != 'node-1'             

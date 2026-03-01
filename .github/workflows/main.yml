@@ -1,0 +1,4 @@
+- name: Executar Ansible Playbook
+      run: |
+        # Usamos o -i e o nome do arquivo apontando para a pasta correta
+        ansible-playbook -i ansible/inventory.ini ansible/k3s-install.yml
