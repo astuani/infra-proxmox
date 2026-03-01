@@ -7,7 +7,7 @@ resource "proxmox_virtual_environment_vm" "k3s_cluster" {
   # --- LOGICA DE DISTRIBUIÇÃO ---
   # Se o ID da VM for par, vai para o pve1, se for ímpar, vai para o pve2
   # (Ou você pode basear isso em uma nova propriedade no seu map de variáveis)
-  node_name = each.value.id % 2 == 0 ? "pve1" : "pve2"
+  node_name = "pve1"
 
   # --- CONFIGURAÇÃO PARA O ISTIO ---
   cpu {
@@ -20,7 +20,7 @@ resource "proxmox_virtual_environment_vm" "k3s_cluster" {
   }
 
   clone {
-    vm_id = each.value.node == "pve1" ? 9000 : 9001
+    vm_id 9000
   }
 
   initialization {
