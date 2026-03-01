@@ -6,8 +6,11 @@ on:
 
 jobs:
   terraform:
-    name: "Terraform Provisioning"
-    runs-on: self-hosted  # <--- O seu Runner na VM Linux
+    name: "1. Provisioning VMs"
+    runs-on: self-hosted
+    outputs:
+      # Isso avisa o próximo passo que o terraform terminou ok
+      tp_status: ${{ job.status }}
     
     defaults:
       run:
@@ -26,10 +29,21 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
-        # O Terraform entende TF_VAR_ automaticamente como variáveis do HCL
         env:
           TF_VAR_proxmox_api_url: ${{ secrets.PROXMOX_URL }}
           TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_TOKEN }}
           TF_VAR_vm_user_password: ${{ secrets.VM_PASSWORD }}
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
         run: terraform apply -parallelism=2 -auto-approve
+
+  # O PASSO ABAIXO SÓ DEVE RODAR DEPOIS QUE O TERRAFORM TERMINAR
+  kubernetes_setup:
+    name: "2. K3s & Secrets"
+    needs: terraform # <--- ISSO AQUI É O SEGREDO! Ele espera o Terraform.
+    runs-on: self-hosted
+    steps:
+      - name: Create Secret
+        run: |
+          # Por enquanto, vamos comentar isso até o Ansible estar pronto
+          # kubectl create secret generic mysql-pass ...
+          echo "Aguardando cluster estar pronto para criar secrets"
