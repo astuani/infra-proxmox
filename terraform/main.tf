@@ -1,13 +1,26 @@
 resource "proxmox_virtual_environment_vm" "k3s_cluster" {
-  # O segredo está aqui: o for_each cria uma VM para cada item da variável
   for_each = var.k3s_nodes
 
   name      = each.value.name
-  node_name = "pve1"
   vm_id     = each.value.id
+  
+  # --- LOGICA DE DISTRIBUIÇÃO ---
+  # Se o ID da VM for par, vai para o pve1, se for ímpar, vai para o pve2
+  # (Ou você pode basear isso em uma nova propriedade no seu map de variáveis)
+  node_name = each.value.id % 2 == 0 ? "pve1" : "pve2"
+
+  # --- CONFIGURAÇÃO PARA O ISTIO ---
+  cpu {
+    cores = 4
+    type  = "host" 
+  }
+
+  memory {
+    dedicated = 4096 # 4GB de RAM para aguentar o Service Mesh
+  }
 
   clone {
-    vm_id = 9000 # Seu template de 100GB
+    vm_id = 9000 
   }
 
   initialization {

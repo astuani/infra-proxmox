@@ -38,3 +38,7 @@ spec:
               key: root-password
         - name: WORDPRESS_DB_NAME
           value: "wordpress"
+        - name: WORDPRESS_CONFIG_EXTRA
+          value: |
+            define('WP_HOME', 'http://wordpress.local');
+            define('WP_SITEURL', 'http://wordpress.local');
