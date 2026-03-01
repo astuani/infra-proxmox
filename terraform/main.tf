@@ -20,7 +20,7 @@ resource "proxmox_virtual_environment_vm" "k3s_cluster" {
   }
 
   clone {
-    vm_id = 9000 
+    vm_id = each.value.target_node == "pve1" ? 9000 : 9001 
   }
 
   initialization {
