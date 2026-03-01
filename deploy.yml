@@ -1,0 +1,24 @@
+name: Deploy Automático WordPress
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Criar Secret Dinâmica
+        run: |
+          kubectl create secret generic mysql-pass \
+            --from-literal=password='${{ secrets.MYSQL_PASSWORD }}' \
+            --from-literal=root-password='${{ secrets.MYSQL_ROOT_PASSWORD }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy dos Manifestos
+        run: |
+          kubectl apply -f ./k8s/configmap.yaml
+          kubectl apply -f ./k8s/mysql.yaml
+          kubectl apply -f ./k8s/wordpress.yaml
